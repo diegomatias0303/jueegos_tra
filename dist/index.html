@@ -27,7 +27,7 @@
         <input type="email" id="correo" placeholder="Correo (solo para registro)" class="hidden"><br>
         <input type="password" id="password" placeholder="Contraseña"><br>
         <button id="btn-accion" onclick="manejarAuth()">Entrar</button>
-        <p><a href="#" onclick="cambiarModo()" id="toggle-link">¿No tienes cuenta? Regístrate aquí</a></p>
+        <p><a href="#" onclick="cambiarModo(event)" id="toggle-link">¿No tienes cuenta? Regístrate aquí</a></p>
         <p id="mensaje-error" style="color: red;"></p>
     </div>
 
@@ -53,14 +53,15 @@
         let esRegistro = false;
         let usuarioActual = "";
 
-        function cambiarModo() {
+        function cambiarModo(event) {
+            if (event) event.preventDefault(); // Evita que el '#' del enlace interfiera
             esRegistro = !esRegistro;
             document.getElementById("form-title").innerText = esRegistro ? "Registro de Usuario" : "Iniciar Sesión";
             document.getElementById("btn-accion").innerText = esRegistro ? "Registrarse" : "Entrar";
             document.getElementById("toggle-link").innerText = esRegistro ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Regístrate aquí";
             document.getElementById("correo").classList.toggle("hidden");
         }
-
+        
         async function manejarAuth() {
             const nombre_usuario = document.getElementById("usuario").value;
             const password = document.getElementById("password").value;

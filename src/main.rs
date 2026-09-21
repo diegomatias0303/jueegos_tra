@@ -64,7 +64,7 @@ async fn manejar_registro(
     )
     .bind(&payload.nombre_usuario)
     .bind(&payload.correo)
-    .bind(&payload.password_hash)
+    .bind(&payload.password)
     .execute(&pool)
     .await;
 
@@ -88,7 +88,7 @@ async fn manejar_login(
         "SELECT nombre_usuario FROM usuarios WHERE nombre_usuario = ? AND password_hash = ?"
     )
     .bind(&payload.nombre_usuario)
-    .bind(&payload.password_hash)
+    .bind(&payload.password)
     .fetch_optional(&pool)
     .await;
 

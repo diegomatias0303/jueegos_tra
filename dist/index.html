@@ -31,14 +31,13 @@
         <p id="mensaje-error" style="color: red;"></p>
     </div>
 
-    <!-- SECCIÓN DEL JUEGO DE LA LOTERÍA (Oculta hasta iniciar sesión) -->
+    <!-- SECCIÓN DEL JUEGO DE LA LOTERÍA -->
     <div id="game-section" class="card hidden" style="max-width: 600px;">
         <h2>¡Bienvenido, <span id="span-user"></span>!</h2>
         <p>Lotería Tradicional Mexicana</p>
         <h3 id="carta-actual" style="color: #d9534f;">Carta cantada: ¡Ninguna! 🎴</h3>
         <button onclick="cantarCarta()">¡Cantar Siguiente Carta!</button>
         
-        <!-- Tablero dinámico con cartas originales -->
         <div id="game-board">
             <div class="carta-loteria" onclick="marcarCarta(this)">La Sirena</div>
             <div class="carta-loteria" onclick="marcarCarta(this)">El Borracho</div>
@@ -63,23 +62,21 @@
         }
 
         async function manejarAuth() {
-		const nombre_usuario = document.getElementById("usuario").value;
-		const password = document.getElementById("password").value;
-		const correo = document.getElementById("correo").value;
-		const mensajeError = document.getElementById("mensaje-error");
+            const nombre_usuario = document.getElementById("usuario").value;
+            const password = document.getElementById("password").value;
+            const correo = document.getElementById("correo").value;
+            const mensajeError = document.getElementById("mensaje-error");
+            mensajeError.innerText = "";
 
-		const endpoint = esRegistro ? "/api/registro" : "/api/login";
-		const payload = esRegistro ? { nombre_usuario, correo, password } : { nombre_usuario, password };
+            const endpoint = esRegistro ? "/api/registro" : "/api/login";
+            const payload = esRegistro ? { nombre_usuario, correo, password } : { nombre_usuario, password };
 
-		try {
-			// Al usar solo la ruta relativa, se conecta al servidor que está sirviendo la página
-			const response = await fetch(endpoint, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload)
-			});
-
-			const data = await response.json();
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
 
                 const data = await response.json();
 
@@ -94,14 +91,13 @@
                         document.getElementById("game-section").classList.remove("hidden");
                     }
                 } else {
-                    mensajeError.innerText = data.mensaje;
+                    mensajeError.innerText = data.mensaje || "Ocurrió un error.";
                 }
             } catch (error) {
                 mensajeError.innerText = "Error de conexión con el servidor de Rust.";
             }
         }
 
-        // Baraja clásica de la Lotería Mexicana
         const barajaLoteria = [
             "El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", 
             "La Sirena", "La Escalera", "La Botella", "El Barril", "El Árbol", 

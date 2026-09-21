@@ -1,35 +1,51 @@
 use axum::{
+    extract::State,
     routing::{get, post},
     Json, Router,
 };
+use serde::{Deserialize, Serialize};
 use sqlx::MySqlPool;
 use std::net::SocketAddr;
-use tower_http::services::ServeDir;
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
+
+#[derive(Deserialize)]
+struct RegistroPayload {
+    nombre_usuario: String,
+    correo: String,
+    password: String,
+}
+
+#[derive(Deserialize)]
+struct LoginPayload {
+    nombre_usuario: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct RespuestaApi {
+    exito: bool,
+    mensaje: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Cargar variables de entorno si usas .env
     dotenvy::dotenv().ok();
 
-    // Conexión a MySQL (ajusta tu URL de conexión según tu base de datos)
     let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "mysql://usuario:password@localhost:3306/loteria_db".to_string());
+        .unwrap_or_else(|_| "mysql://root:@localhost:3306/loteria_db".to_string());
     
     let pool = MySqlPool::connect(&database_url).await?;
     println!("¡Conectado exitosamente a la base de datos MySQL!");
 
-    // Configurar rutas de la API y el servicio de archivos estáticos del Frontend
     let app = Router::new()
-        // Servir los archivos estáticos de la interfaz (HTML, CSS, JS) desde la carpeta "dist"
         .nest_service("/", ServeDir::new("dist"))
-        // Tus rutas de API (ejemplo)
         .route("/api/health", get(|| async { "API funcionando al 100%" }))
-        // Habilitar CORS para evitar problemas de peticiones
+        .route("/api/registro", post(manejar_registro))
+        .route("/api/login", post(manejar_login))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
-    // Escuchar en todas las interfaces en el puerto 3000
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("Servidor corriendo en http://{}", addr);
     
@@ -37,4 +53,59 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+async fn manejar_registro(
+    State(pool): State<MySqlPool>,
+    Json(payload): Json<RegistroPayload>,
+) -> Json<RespuestaApi> {
+    // Ejemplo básico de inserción en MySQL (Ajusta los nombres de tu tabla y columnas según tu BD)
+    let resultado = sqlx::query(
+        "INSERT INTO usuarios (nombre_usuario, correo, password) VALUES (?, ?, ?)"
+    )
+    .bind(&payload.nombre_usuario)
+    .bind(&payload.correo)
+    .bind(&payload.password) // Nota: Idealmente se recomienda hashear la contraseña
+    .execute(&pool)
+    .await;
+
+    match resultado {
+        Ok(_) => Json(RespuestaApi {
+            exito: true,
+            mensaje: "Usuario registrado correctamente".to_string(),
+        }),
+        Err(e) => Json(RespuestaApi {
+            exito: false,
+            mensaje: format!("Error al registrar (usuario o correo duplicado): {}", e),
+        }),
+    }
+}
+
+async fn manejar_login(
+    State(pool): State<MySqlPool>,
+    Json(payload): Json<LoginPayload>,
+) -> Json<RespuestaApi> {
+    // Consulta para validar usuario y contraseña en MySQL
+    let fila: Result<Option<(String,), _>> = sqlx::query_as(
+        "SELECT nombre_usuario FROM usuarios WHERE nombre_usuario = ? AND password = ?"
+    )
+    .bind(&payload.nombre_usuario)
+    .bind(&payload.password)
+    .fetch_optional(&pool)
+    .await;
+
+    match fila {
+        Ok(Some(_)) => Json(RespuestaApi {
+            exito: true,
+            mensaje: "Login exitoso".to_string(),
+        }),
+        Ok(None) => Json(RespuestaApi {
+            exito: false,
+            mensaje: "Usuario o contraseña incorrectos".to_string(),
+        }),
+        Err(e) => Json(RespuestaApi {
+            exito: false,
+            mensaje: format!("Error en el servidor: {}", e),
+        }),
+    }
 }

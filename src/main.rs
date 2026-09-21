@@ -59,13 +59,12 @@ async fn manejar_registro(
     State(pool): State<MySqlPool>,
     Json(payload): Json<RegistroPayload>,
 ) -> Json<RespuestaApi> {
-    // Ejemplo básico de inserción en MySQL (Ajusta los nombres de tu tabla y columnas según tu BD)
     let resultado = sqlx::query(
         "INSERT INTO usuarios (nombre_usuario, correo, password) VALUES (?, ?, ?)"
     )
     .bind(&payload.nombre_usuario)
     .bind(&payload.correo)
-    .bind(&payload.password) // Nota: Idealmente se recomienda hashear la contraseña
+    .bind(&payload.password)
     .execute(&pool)
     .await;
 
@@ -85,8 +84,7 @@ async fn manejar_login(
     State(pool): State<MySqlPool>,
     Json(payload): Json<LoginPayload>,
 ) -> Json<RespuestaApi> {
-    // Consulta para validar usuario y contraseña en MySQL
-    let fila: Result<Option<(String,), _>> = sqlx::query_as(
+    let resultado = sqlx::query_scalar::<_, String>(
         "SELECT nombre_usuario FROM usuarios WHERE nombre_usuario = ? AND password = ?"
     )
     .bind(&payload.nombre_usuario)
@@ -94,7 +92,7 @@ async fn manejar_login(
     .fetch_optional(&pool)
     .await;
 
-    match fila {
+    match resultado {
         Ok(Some(_)) => Json(RespuestaApi {
             exito: true,
             mensaje: "Login exitoso".to_string(),

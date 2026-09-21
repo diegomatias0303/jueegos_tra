@@ -32,8 +32,8 @@ struct RespuestaApi {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "mysql://juego_user:juego123@100.70.178.71:2009/centro_juegos".to_string());
+   let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "mysql://admin_db:Password123*@100.70.178.71:2009/centro_juegos".to_string());
     
     let pool = MySqlPool::connect(&database_url).await?;
     println!("¡Conectado exitosamente a la base de datos MySQL!");
@@ -60,11 +60,11 @@ async fn manejar_registro(
     Json(payload): Json<RegistroPayload>,
 ) -> Json<RespuestaApi> {
     let resultado = sqlx::query(
-        "INSERT INTO usuarios (nombre_usuario, correo, password) VALUES (?, ?, ?)"
+        "INSERT INTO usuarios (nombre_usuario, correo, password_hash) VALUES (?, ?, ?)"
     )
     .bind(&payload.nombre_usuario)
     .bind(&payload.correo)
-    .bind(&payload.password)
+    .bind(&payload.password_hash)
     .execute(&pool)
     .await;
 
@@ -85,10 +85,10 @@ async fn manejar_login(
     Json(payload): Json<LoginPayload>,
 ) -> Json<RespuestaApi> {
     let resultado = sqlx::query_scalar::<_, String>(
-        "SELECT nombre_usuario FROM usuarios WHERE nombre_usuario = ? AND password = ?"
+        "SELECT nombre_usuario FROM usuarios WHERE nombre_usuario = ? AND password_hash = ?"
     )
     .bind(&payload.nombre_usuario)
-    .bind(&payload.password)
+    .bind(&payload.password_hash)
     .fetch_optional(&pool)
     .await;
 

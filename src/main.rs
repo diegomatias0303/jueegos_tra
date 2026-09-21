@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "mysql://root:@localhost:3306/loteria_db".to_string());
+        .unwrap_or_else(|_| "mysql://juego_user:juego123@100.70.178.71:2009/centro_juegos".to_string());
     
     let pool = MySqlPool::connect(&database_url).await?;
     println!("¡Conectado exitosamente a la base de datos MySQL!");
